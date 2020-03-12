@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const Article = require('./db').Article;
+const read = require('node-readability');
 
 app.set('port', process.env.PORT || 3000);
 
@@ -17,7 +18,15 @@ app.get('/articles', (req, res, next) => {
 });
 
 app.post('/articles', (req, res, next) => {
-    res.send('OK');
+    const url = req.body.url; // Получает URL из тела POST.
+    read(url, (err, result) => { //Использует режим удобочитаемости от выборки URL.
+        if (err || !result)
+        res.status(500).send('Error downloading article'); 
+        Article.create({ title: result.title, content: result.content },(err, article) => {
+            if (err) return next(err);
+            res.send('OK'); // После сохранения статьи возвращает код 200.
+        });
+    });
 });
 
 app.get('/articles/:id', (req, res, next) => { 
